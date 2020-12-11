@@ -34,6 +34,7 @@ namespace OLED {
     const chipAdress = 0x3C
     const xOffset = 0
     const yOffset = 0
+
     let charX = 0
     let charY = 0
     let displayWidth = 128
@@ -47,6 +48,22 @@ namespace OLED {
         buf[0] = 0x00
         buf[1] = cmd
         pins.i2cWriteBuffer(chipAdress, buf, false)
+    }
+    function sendData(cmd: number){
+        let buf = pins.createBuffer(2)
+        buf[0] = 0x40
+        buf[1] = cmd
+        pins.i2cWriteBuffer(chipAdress, buf, false)      
+    }
+    function setColumnAddress(start: number, end: number){
+        command(SSD1306_SETCOLUMNADRESS);
+        command(start);
+        command(end);
+    }
+    function setPageAddress(start: number, end: number){       
+        command(SSD1306_SETPAGEADRESS)
+        command(start);
+        command(end);
     }
     //% block="clear OLED display"
     //% weight=3
@@ -86,7 +103,6 @@ namespace OLED {
         let count = (displayWidth) * (displayHeight);
 
 
-    
 
 
 let data = pins.createBuffer(2);
@@ -314,6 +330,32 @@ let data = pins.createBuffer(2);
             }
         }
         drawShape(pixels)
+    }
+
+    const PRG_MAX_SCALE  =   100
+    const PRG_LEFT_EDGE  = 0xFF
+    const PRG_RIGHT_EDGE = 0xFF
+    const PRG_ACTIVE    =  0xBD
+    const PRG_NOT_ACTIVE = 0x81
+    //% block="progressBar $percent percent at $page  $col"
+    //% percent.min=0 percent.max=100
+    //% page.min=0 page.max=7
+    //% col.min=0 col.max=50
+    //% weight=3
+    export function progressBar(percent: number, page = 0, col = 0){
+    let i: number, scale_value: number;
+    setPageAddress(page,page);
+    setColumnAddress(col, displayWidth - 1);
+    scale_value = percent % PRG_MAX_SCALE;
+sendData(PRG_LEFT_EDGE);
+for (i = 0; i < scale_value; i++ ) {
+sendData(PRG_NOT_ACTIVE);
+    }
+sendData(PRG_ACTIVE);    
+ for (i = scale_value; i < PRG_MAX_SCALE; i++ ) {
+sendData(PRG_NOT_ACTIVE);
+    }  
+    sendData(PRG_RIGHT_EDGE);     
     }
 
     //% block="draw rectangle from:|x: $x0 y: $y0 to| x: $x1 y: $y1"
@@ -626,3 +668,56 @@ let data = pins.createBuffer(2);
         clear()
     }
 } 
+
+/**
+* makecode WhaleySans Font Package.
+* From microbit/micropython Chinese community.
+* http://www.micropython.org.cn
+*/
+
+//% weight=100 color=#cc1280 icon="F" block="WhaleySans Font"
+namespace whaleysans {
+    let FONT = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+        [1, 1, 0, 1, 1, 1, 0, 1, 1, 1],
+        [1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+        [1, 1, 1, 0, 1, 1, 0, 1, 1, 1],
+        [1, 1, 1, 0, 1, 1, 1, 1, 1, 1],
+        [1, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+        [1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 0, 1, 1, 1]
+    ]
+    let img: Image = null
+    img = images.createImage(`
+    . . . . .
+    . . . . .
+    . . . . .
+    . . . . .
+    . . . . .
+    `)
+
+    /**
+     * show a number
+     * @param dat is number will be show, eg: 10
+     */
+    //% blockId="show_whaleysans_number" block="show a whaleysans number %dat"
+    //% dat.min=0 dat.max=99
+    export function showNumber(dat: number): void {
+        if(dat<0)
+            dat=0;
+
+        let a = FONT[Math.idiv(dat, 10) % 10];
+        let b = FONT[dat % 10];
+
+        for (let i = 0; i < 5; i++) {
+            img.setPixel(0, i, 1 == a[i * 2])
+            img.setPixel(1, i, 1 == a[i * 2 + 1])
+            img.setPixel(3, i, 1 == b[i * 2])
+            img.setPixel(4, i, 1 == b[i * 2 + 1])
+        }
+        //img.setPixelBrightness(0, 0, 0)
+        img.showImage(0, 10);
+    }
+}
