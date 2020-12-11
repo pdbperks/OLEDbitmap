@@ -1,6 +1,6 @@
 input.onButtonPressed(Button.A, function () {
     DAL.MICROBIT_DISPLAY_ROTATION_90
-whaleysans.showNumber(75)
+null
     OLED.bitmap()
 })
 input.onButtonPressed(Button.AB, function () {
