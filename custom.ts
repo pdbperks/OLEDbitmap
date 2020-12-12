@@ -43,6 +43,7 @@ namespace OLED {
     //let font: Array<Array<number>>
     let loadStarted: boolean;
     let loadPercent: number;
+
     function command(cmd: number) {
         let buf = pins.createBuffer(2)
         buf[0] = 0x00
@@ -70,12 +71,8 @@ namespace OLED {
     export function clear() {
         loadStarted = false
         loadPercent = 0
-        command(SSD1306_SETCOLUMNADRESS)
-        command(0x00)
-        command(displayWidth - 1)
-        command(SSD1306_SETPAGEADRESS)
-        command(0x00)
-        command(displayHeight - 1)
+        setColumnAddress(0x00, displayWidth - 1)
+        setPageAddress(0x00, displayHeight - 1)
         let data = pins.createBuffer(17);
         data[0] = 0x40; // Data Mode
         for (let i = 1; i < 17; i++) {
@@ -102,9 +99,6 @@ namespace OLED {
         //let data = pins.createBuffer(2);
         let count = (displayWidth) * (displayHeight);
 
-
-
-
 let data = pins.createBuffer(2);
         for (let i = 0; i < count; i ++) {
             data[0] = 0x40; // Data Mode
@@ -114,78 +108,6 @@ let data = pins.createBuffer(2);
         charX = xOffset
         charY = yOffset
     }
-    function drawLoadingFrame() {
-        command(SSD1306_SETCOLUMNADRESS)
-        command(0x00)
-        command(displayWidth - 1)
-        command(SSD1306_SETPAGEADRESS)
-        command(0x00)
-        command(displayHeight - 1)
-        let col = 0
-        let page = 0
-        let data = pins.createBuffer(17);
-        data[0] = 0x40; // Data Mode
-        let i = 1
-        for (let page = 0; page < displayHeight; page++) {
-            for (let col = 0; col < displayWidth; col++) {
-                if (page === 3 && col > 12 && col < displayWidth - 12) {
-                    data[i] = 0x60
-                } else if (page === 5 && col > 12 && col < displayWidth - 12) {
-                    data[i] = 0x06
-                } else if (page === 4 && (col === 12 || col === 13 || col === displayWidth - 12 || col === displayWidth - 13)) {
-                    data[i] = 0xFF
-                } else {
-                    data[i] = 0x00
-                }
-                if (i === 16) {
-                    pins.i2cWriteBuffer(chipAdress, data, false)
-                    i = 1
-                } else {
-                    i++
-                }
-
-            }
-        }
-        charX = 30
-        charY = 2
-        writeString("Loading:")
-    }
-    function drawLoadingBar(percent: number) {
-        charX = 78
-        charY = 2
-        let num = Math.floor(percent)
-        writeNum(num)
-        writeString("%")
-        let width = displayWidth - 14 - 13
-        let lastStart = width * (loadPercent / displayWidth)
-        command(SSD1306_SETCOLUMNADRESS)
-        command(14 + lastStart)
-        command(displayWidth - 13)
-        command(SSD1306_SETPAGEADRESS)
-        command(4)
-        command(5)
-        let data = pins.createBuffer(2);
-        data[0] = 0x40; // Data Mode
-        data[1] = 0x7E
-        for (let i = lastStart; i < width * (Math.floor(percent) / 100); i++) {
-            pins.i2cWriteBuffer(chipAdress, data, false)
-        }
-        loadPercent = num
-    }
-
-    //% block="draw loading bar at $percent percent"
-    //% percent.min=0 percent.max=100
-    //% weight=2
-    export function drawLoading(percent: number) {
-        if (loadStarted) {
-            drawLoadingBar(percent)
-        } else {
-            drawLoadingFrame()
-            drawLoadingBar(percent)
-            loadStarted = true
-        }
-    }
-
 
     //% block="show (without newline) string $str"
     //% weight=6
@@ -223,12 +145,14 @@ let data = pins.createBuffer(2);
         charX = xOffset
     }
     function drawChar(x: number, y: number, c: string) {
-        command(SSD1306_SETCOLUMNADRESS)
-        command(x)
-        command(x + 5)
-        command(SSD1306_SETPAGEADRESS)
-        command(y)
-        command(y + 1)
+        setColumnAddress(x, x + 5)
+        setPageAddress(y, y + 1)
+       // command(SSD1306_SETCOLUMNADRESS)
+       // command(x)
+       // command(x + 5)
+       // command(SSD1306_SETPAGEADRESS)
+       // command(y)
+        //command(y + 1)
         let line = pins.createBuffer(2)
         line[0] = 0x40
         for (let i = 0; i < 6; i++) {
@@ -278,12 +202,14 @@ let data = pins.createBuffer(2);
                     }
                 }
                 if (line[1] !== 0x00) {
-                    command(SSD1306_SETCOLUMNADRESS)
-                    command(x)
-                    command(x + 1)
-                    command(SSD1306_SETPAGEADRESS)
-                    command(page)
-                    command(page + 1)
+                    setColumnAddress(x, x+1)
+                    setPageAddress(page, page+1)
+                    //command(SSD1306_SETCOLUMNADRESS)
+                    //command(x)
+                    //command(x + 1)
+                    //command(SSD1306_SETPAGEADRESS)
+                    //command(page)
+                    //command(page + 1)
                     //line[1] |= pins.i2cReadBuffer(chipAdress, 2)[1]
                     pins.i2cWriteBuffer(chipAdress, line, false)
                 }
@@ -337,22 +263,23 @@ let data = pins.createBuffer(2);
     const PRG_RIGHT_EDGE = 0xFF
     const PRG_ACTIVE    =  0xBD
     const PRG_NOT_ACTIVE = 0x81
-    //% block="progressBar $percent percent at $page  $col"
+    //% block="progressBar $percent percent at $page,$col Width $wide"
     //% percent.min=0 percent.max=100
     //% page.min=0 page.max=7
     //% col.min=0 col.max=50
+    //% wide.min=10 wide.max=128
     //% weight=3
-    export function progressBar(percent: number, page = 0, col = 0){
+    export function progressBar(percent: number, page = 0, col = 0, wide = 50){
     let i: number, scale_value: number;
     setPageAddress(page,page);
     setColumnAddress(col, displayWidth - 1);
-    scale_value = percent % PRG_MAX_SCALE;
+    scale_value = percent % wide;
 sendData(PRG_LEFT_EDGE);
 for (i = 0; i < scale_value; i++ ) {
 sendData(PRG_NOT_ACTIVE);
     }
 sendData(PRG_ACTIVE);    
- for (i = scale_value; i < PRG_MAX_SCALE; i++ ) {
+ for (i = scale_value; i < wide; i++ ) {
 sendData(PRG_NOT_ACTIVE);
     }  
     sendData(PRG_RIGHT_EDGE);     
