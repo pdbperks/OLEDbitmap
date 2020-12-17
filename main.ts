@@ -9,6 +9,12 @@ input.onButtonPressed(Button.AB, function () {
     OLED.clear()
     OLED.writeStringNewLine("OLED demonstration")
     while (!(input.buttonIsPressed(Button.A))) {
+        OLED.writeBigNumber(
+        3,
+        0,
+        input.temperature(),
+        true
+        )
         OLED.progressBar(
         Math.map(input.acceleration(Dimension.X), -900, 900, 0, 120),
         7,
@@ -25,7 +31,7 @@ input.onButtonPressed(Button.B, function () {
 OLED.init(128, 64)
 OLED.writeStringNewLine("OLED demonstration")
 OLED.writeStringNewLine("Press a button")
-OLED.bigchar()
+OLED.bigChar(3,50,"+")
 OLED.bitmapImage = hex`
 00000000000000000000000000000000
 00000000000000000000000000000000
