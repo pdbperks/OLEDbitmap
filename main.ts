@@ -1,13 +1,14 @@
 input.onButtonPressed(Button.A, function () {
-    DAL.MICROBIT_DISPLAY_ROTATION_90
-null
-OLED.bitmap()
+    // basic.rotateTo(DAL.MICROBIT_DISPLAY_ROTATION_90)
+    // DAL.MICROBIT_DISPLAY_ROTATION_180
+    basic.showNumber(5)
+    OLED.bitmap(OLED.bitmapImage,2,6);
 })
 input.onButtonPressed(Button.AB, function () {
     basic.clearScreen()
     OLED.clear()
     OLED.writeStringNewLine("OLED demonstration")
-    while (!(input.logoIsPressed())) {
+    while (!(input.buttonIsPressed(Button.A))) {
         OLED.progressBar(
         Math.map(input.acceleration(Dimension.X), -900, 900, 0, 120),
         7,
@@ -24,6 +25,7 @@ input.onButtonPressed(Button.B, function () {
 OLED.init(128, 64)
 OLED.writeStringNewLine("OLED demonstration")
 OLED.writeStringNewLine("Press a button")
+OLED.bigchar()
 OLED.bitmapImage = hex`
 00000000000000000000000000000000
 00000000000000000000000000000000

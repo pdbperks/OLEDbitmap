@@ -5,7 +5,8 @@ declare interface Math {
 
 //% color=#27b0ba icon="\uf26c"
 namespace OLED {
-    let font: Buffer;
+    export let bigfont: Buffer;
+    export let font: Buffer;
     export let bitmapImage: Buffer;
 
     const SSD1306_SETCONTRAST = 0x81
@@ -70,12 +71,8 @@ namespace OLED {
     export function clear() {
         loadStarted = false
         loadPercent = 0
-        command(SSD1306_SETCOLUMNADRESS)
-        command(0x00)
-        command(displayWidth - 1)
-        command(SSD1306_SETPAGEADRESS)
-        command(0x00)
-        command(displayHeight - 1)
+        setPageAddress(0x00,(displayHeight - 1));
+        setColumnAddress(0x00, displayWidth - 1);
         let data = pins.createBuffer(17);
         data[0] = 0x40; // Data Mode
         for (let i = 1; i < 17; i++) {
@@ -90,102 +87,25 @@ namespace OLED {
     }
         //% block="show OLED bitmap"
     //% weight=3
-    export function bitmap(){
+    export function bitmap(bitmap: Buffer, 
+            start_page = 0, end_page = 7,
+            start_col = 0, end_col = 127){
         //loadStarted = false
         //loadPercent = 0
-        command(SSD1306_SETCOLUMNADRESS)
-        command(0x00)
-        command(displayWidth - 1)
-        command(SSD1306_SETPAGEADRESS)
-        command(0x00)
-        command(displayHeight - 1)
+        setPageAddress(start_page,end_page);
+        setColumnAddress(start_col, end_col);
         //let data = pins.createBuffer(2);
-        let count = (displayWidth) * (displayHeight);
-
-
-
-
+        //let count = (displayWidth) * (displayHeight);
+        let count = (end_page+1 - start_page)*(end_col+1 - start_col);
 let data = pins.createBuffer(2);
         for (let i = 0; i < count; i ++) {
             data[0] = 0x40; // Data Mode
-            data[1] = bitmapImage.getNumber(NumberFormat.Int8LE, i);
+            data[1] = bitmap.getNumber(NumberFormat.Int8LE, i);
             pins.i2cWriteBuffer(chipAdress, data, false)
         }
         charX = xOffset
         charY = yOffset
     }
-    function drawLoadingFrame() {
-        command(SSD1306_SETCOLUMNADRESS)
-        command(0x00)
-        command(displayWidth - 1)
-        command(SSD1306_SETPAGEADRESS)
-        command(0x00)
-        command(displayHeight - 1)
-        let col = 0
-        let page = 0
-        let data = pins.createBuffer(17);
-        data[0] = 0x40; // Data Mode
-        let i = 1
-        for (let page = 0; page < displayHeight; page++) {
-            for (let col = 0; col < displayWidth; col++) {
-                if (page === 3 && col > 12 && col < displayWidth - 12) {
-                    data[i] = 0x60
-                } else if (page === 5 && col > 12 && col < displayWidth - 12) {
-                    data[i] = 0x06
-                } else if (page === 4 && (col === 12 || col === 13 || col === displayWidth - 12 || col === displayWidth - 13)) {
-                    data[i] = 0xFF
-                } else {
-                    data[i] = 0x00
-                }
-                if (i === 16) {
-                    pins.i2cWriteBuffer(chipAdress, data, false)
-                    i = 1
-                } else {
-                    i++
-                }
-
-            }
-        }
-        charX = 30
-        charY = 2
-        writeString("Loading:")
-    }
-    function drawLoadingBar(percent: number) {
-        charX = 78
-        charY = 2
-        let num = Math.floor(percent)
-        writeNum(num)
-        writeString("%")
-        let width = displayWidth - 14 - 13
-        let lastStart = width * (loadPercent / displayWidth)
-        command(SSD1306_SETCOLUMNADRESS)
-        command(14 + lastStart)
-        command(displayWidth - 13)
-        command(SSD1306_SETPAGEADRESS)
-        command(4)
-        command(5)
-        let data = pins.createBuffer(2);
-        data[0] = 0x40; // Data Mode
-        data[1] = 0x7E
-        for (let i = lastStart; i < width * (Math.floor(percent) / 100); i++) {
-            pins.i2cWriteBuffer(chipAdress, data, false)
-        }
-        loadPercent = num
-    }
-
-    //% block="draw loading bar at $percent percent"
-    //% percent.min=0 percent.max=100
-    //% weight=2
-    export function drawLoading(percent: number) {
-        if (loadStarted) {
-            drawLoadingBar(percent)
-        } else {
-            drawLoadingFrame()
-            drawLoadingBar(percent)
-            loadStarted = true
-        }
-    }
-
 
     //% block="show (without newline) string $str"
     //% weight=6
@@ -223,19 +143,15 @@ let data = pins.createBuffer(2);
         charX = xOffset
     }
     function drawChar(x: number, y: number, c: string) {
-        command(SSD1306_SETCOLUMNADRESS)
-        command(x)
-        command(x + 5)
-        command(SSD1306_SETPAGEADRESS)
-        command(y)
-        command(y + 1)
+        setPageAddress(y, y +1);
+        setColumnAddress(x, x +5);
         let line = pins.createBuffer(2)
         line[0] = 0x40
         for (let i = 0; i < 6; i++) {
             if (i === 5) {
                 line[1] = 0x00
             } else {
-                let charIndex = c.charCodeAt(0)
+                let charIndex = c.charCodeAt(0)-32
                 let charNumber = font.getNumber(NumberFormat.UInt8BE, 5 * charIndex + i)
                 line[1] = charNumber
 
@@ -408,39 +324,12 @@ sendData(PRG_NOT_ACTIVE);
         screenSize = displayWidth * displayHeight
         charX = xOffset
         charY = yOffset
-        font = hex`
-    0000000000
-    3E5B4F5B3E
-    3E6B4F6B3E
-    1C3E7C3E1C
-    183C7E3C18
-    1C577D571C
-    1C5E7F5E1C
-    00183C1800
-    FFE7C3E7FF
-    0018241800
-    FFE7DBE7FF
-    30483A060E
-    2629792926
-    407F050507
-    407F05253F
-    5A3CE73C5A
-    7F3E1C1C08
-    081C1C3E7F
-    14227F2214
-    5F5F005F5F
-    06097F017F
-    006689956A
-    6060606060
-    94A2FFA294
-    08047E0408
-    10207E2010
-    08082A1C08
-    081C2A0808
-    1E10101010
-    0C1E0C1E0C
-    30383E3830
-    060E3E0E06
+
+        loadStarted = false
+        loadPercent = 0
+        clear()
+    }
+            font = hex`
     0000000000
     00005F0000
     0007000700
@@ -568,104 +457,96 @@ sendData(PRG_NOT_ACTIVE);
     487E494366
     2B2FFC2F2B
     FF0929F620
-    C0887E0903
-    2054547941
-    0000447D41
-    3048484A32
-    384040227A
-    007A0A0A72
-    7D0D19317D
-    2629292F28
-    2629292926
-    30484D4020
-    3808080808
-    0808080838
-    2F10C8ACBA
-    2F102834FA
-    00007B0000
-    08142A1422
-    22142A1408
-    AA005500AA
-    AA55AA55AA
-    000000FF00
-    101010FF00
-    141414FF00
-    1010FF00FF
-    1010F010F0
-    141414FC00
-    1414F700FF
-    0000FF00FF
-    1414F404FC
-    141417101F
-    10101F101F
-    1414141F00
-    101010F000
-    0000001F10
-    1010101F10
-    101010F010
-    000000FF10
-    1010101010
-    101010FF10
-    000000FF14
-    0000FF00FF
-    00001F1017
-    0000FC04F4
-    1414171017
-    1414F404F4
-    0000FF00F7
-    1414141414
-    1414F700F7
-    1414141714
-    10101F101F
-    141414F414
-    1010F010F0
-    00001F101F
-    0000001F14
-    000000FC14
-    0000F010F0
-    1010FF10FF
-    141414FF14
-    1010101F00
-    000000F010
-    FFFFFFFFFF
-    F0F0F0F0F0
-    FFFFFF0000
-    000000FFFF
-    0F0F0F0F0F
-    3844443844
-    7C2A2A3E14
-    7E02020606
-    027E027E02
-    6355494163
-    3844443C04
-    407E201E20
-    06027E0202
-    99A5E7A599
-    1C2A492A1C
-    4C7201724C
-    304A4D4D30
-    3048784830
-    BC625A463D
-    3E49494900
-    7E0101017E
-    2A2A2A2A2A
-    44445F4444
-    40514A4440
-    40444A5140
-    0000FF0103
-    E080FF0000
-    08086B6B08
-    3612362436
-    060F090F06
-    0000181800
-    0000101000
-    3040FF0101
-    001F01011E
-    00191D1712
-    003C3C3C3C
-    0000000000`
-        loadStarted = false
-        loadPercent = 0
-        clear()
-    }
-} 
+    C0887E0903`
+
+export function bigchar(){
+bitmap(bigfont,2,5,10,22);
+
+}
+
+/*
+    function drawChar(x: number, y: number, c: string) {
+        setPageAddress(y, y +1);
+        setColumnAddress(x, x +5);
+        let line = pins.createBuffer(2)
+        line[0] = 0x40
+        for (let i = 0; i < 6; i++) {
+            if (i === 5) {
+                line[1] = 0x00
+            } else {
+                let charIndex = c.charCodeAt(0)-32
+                let charNumber = font.getNumber(NumberFormat.UInt8BE, 5 * charIndex + i)
+                line[1] = charNumber
+
+            }
+            pins.i2cWriteBuffer(chipAdress, line, false)
+        }
+*/ 
+//first char =43 +, page =  3, col = 13
+    bigfont = hex`
+00000000000000000000000000
+000010383838ffff3838381000
+00000000000003030000000000 
+
+00000000000000000000000000
+00000000000000000000000000
+00000000009078381000000000 
+
+00000000000000000000000000
+00001038383838383838381000
+00000000000000000000000000 
+
+00000000000000000000000000
+00000000000000000000000000
+000000000040e0e04000000000 
+
+000002060e0e0e0e0e0e060200
+00001038383838383838381000
+000080c0e0e0e0e0e0e0c08000 
+
+00fcfaf60e0e0e0e0e0ef6fafc
+00efc78300000000000083c7ef
+007fbfdfe0e0e0e0e0e0dfbf7f
+
+00000000000000000000f0f8fc
+0000000000000000000083c7ef
+000000000000000000001f3f7f 
+
+000002060e0e0e0e0e0ef6fafc
+00e0d0b83838383838383b170f
+007fbfdfe0e0e0e0e0e0c08000  
+
+000002060e0e0e0e0e0ef6fafc
+00001038383838383838bbd7ef
+000080c0e0e0e0e0e0e0dfbf7f 
+
+00fcf8f0000000000000f0f8fc
+000f173b383838383838bbd7ef
+000000000000000000001f3f7f  
+
+00fcfaf60e0e0e0e0e0e060200
+000f173b383838383838b8d0e0
+000080c0e0e0e0e0e0e0dfbf7f  
+
+00fcfaf60e0e0e0e0e0e060200
+00efd7bb383838383838b8d0e0
+007fbfdfe0e0e0e0e0e0dfbf7f 
+
+000002060e0e0e0e0e0ef6fafc
+0000000000000000000083c7ef
+000000000000000000001f3f7f 
+
+00fcfaf60e0e0e0e0e0ef6fafc
+00efd7bb383838383838bbd7ef
+007fbfdfe0e0e0e0e0e0dfbf7f  
+
+00fcfaf60e0e0e0e0e0ef6fafc
+000f173b383838383838bbd7ef
+000080c0e0e0e0e0e0e0dfbf7f  
+
+000000000080c0c08000000000
+00000000000001010000000000 
+0000000000040e0e0400000000
+`
+}
+
