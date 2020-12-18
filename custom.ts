@@ -85,7 +85,11 @@ namespace OLED {
         charX = xOffset
         charY = yOffset
     }
-        //% block="show OLED bitmap"
+        //% block="show OLED bitmap: $bitmap||page $start_page to $end_page column $start_col to $end_col"
+         //% start_page.min=0 start_page.max=7
+        //% end_page.min=0 end_page.max=7 end_page.defl=7
+    //% start_col.min=0 start_col.max=120  
+    //% end_col.min=0 end_col.max=120  end_col.defl=127
     //% weight=3
     export function bitmap(bitmap: Buffer, 
             start_page = 0, end_page = 7,
@@ -253,20 +257,22 @@ let data = pins.createBuffer(2);
     const PRG_RIGHT_EDGE = 0xFF
     const PRG_ACTIVE    =  0xBD
     const PRG_NOT_ACTIVE = 0x81
-    //% block="progressBar $percent percent at $page,$col Width $wide"
+    //% block="progressBar: value $percent | page $page col $col|| Width $wide bar $level"
     //% percent.min=0 percent.max=100
     //% page.min=0 page.max=7
     //% col.min=0 col.max=50
     //% wide.min=10 wide.max=128
+    //% level.shadow="toggleOnOff"
     //% weight=3
-    export function progressBar(percent: number, page = 0, col = 0, wide = 50){
+    export function progressBar(percent: number, page = 0, col = 0, wide = 100, level: boolean){
     let i: number, scale_value: number;
     setPageAddress(page,page);
     setColumnAddress(col, displayWidth - 1);
     scale_value = percent % wide;
 sendData(PRG_LEFT_EDGE);
 for (i = 0; i < scale_value; i++ ) {
-sendData(PRG_NOT_ACTIVE);
+if (level) sendData(PRG_ACTIVE);
+else sendData(PRG_NOT_ACTIVE)
     }
 sendData(PRG_ACTIVE);    
  for (i = scale_value; i < wide; i++ ) {
@@ -329,7 +335,7 @@ sendData(PRG_NOT_ACTIVE);
         loadPercent = 0
         clear()
     }
-            font = hex`
+       font = hex`
     0000000000
     00005F0000
     0007000700
@@ -464,26 +470,47 @@ bitmap(bigfont,2,5,10,22);
 
 }
 
-/*
-    function drawChar(x: number, y: number, c: string) {
-        setPageAddress(y, y +1);
-        setColumnAddress(x, x +5);
+
+    export function bigChar(page: number, col: number,  c: string) {
+        setPageAddress(page, page +3);
+        setColumnAddress(col, col +12);
         let line = pins.createBuffer(2)
         line[0] = 0x40
-        for (let i = 0; i < 6; i++) {
-            if (i === 5) {
+        for (let i = 0; i < 40; i++) {
+            if (i === 39) {
                 line[1] = 0x00
             } else {
-                let charIndex = c.charCodeAt(0)-32
-                let charNumber = font.getNumber(NumberFormat.UInt8BE, 5 * charIndex + i)
+                let charIndex = c.charCodeAt(0)-42
+                let charNumber = bigfont.getNumber(NumberFormat.UInt8BE, 39 * charIndex + i)
                 line[1] = charNumber
 
             }
             pins.i2cWriteBuffer(chipAdress, line, false)
         }
-*/ 
+    }
+    
+    //% block="writeBigNumber at $page$col number$bigNum|| °c$temp "
+    //% page.min=0 page.max=7
+    //% col.min=0 col.max=100
+    //% temp.shadow="toggleOnOff"
+    //% inlineInputMode=inline
+    //% weight=5
+    export function writeBigNumber(page: number, col: number,  bigNum: number, temp = false){
+        let str = Math.round(bigNum).toString();   
+        for (let i = 0; i < str.length; i++) {
+            bigChar(page,col,str[i])
+            col+=18
+    }
+    if (temp) bigChar(page,col,"*") 
+    }
+/**/ 
 //first char =43 +, page =  3, col = 13
+//% block="bigfont"
     bigfont = hex`
+7CBA8282BA7C00000000000000     
+0000000000E0D0303030100000      
+00000000003F5F606060400000      																											     																											
+																											   																										
 00000000000000000000000000
 000010383838ffff3838381000
 00000000000003030000000000 
