@@ -1,5 +1,7 @@
 quiet fork from https://github.com/tinkertanker/pxt-oled-ssd1306
+
 Adding bitmap support. https://www.hobbytronics.co.uk/bmp-lcd-converter Remove 0x and commas throughout the generated data.
+
 Large LCD style number font. Simple horizontal and vertical progress bar/level meter.
 
 
