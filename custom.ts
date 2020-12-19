@@ -85,7 +85,11 @@ namespace OLED {
         charX = xOffset
         charY = yOffset
     }
-        //% block="show OLED bitmap"
+        //% block="show OLED bitmap: $bitmap||page $start_page to $end_page column $start_col to $end_col"
+         //% start_page.min=0 start_page.max=7
+        //% end_page.min=0 end_page.max=7 end_page.defl=7
+    //% start_col.min=0 start_col.max=120  
+    //% end_col.min=0 end_col.max=120  end_col.defl=127
     //% weight=3
     export function bitmap(bitmap: Buffer, 
             start_page = 0, end_page = 7,
@@ -253,20 +257,22 @@ let data = pins.createBuffer(2);
     const PRG_RIGHT_EDGE = 0xFF
     const PRG_ACTIVE    =  0xBD
     const PRG_NOT_ACTIVE = 0x81
-    //% block="progressBar $percent percent at $page,$col Width $wide"
+    //% block="progressBar: value $percent page $page col $col|| Width $wide bar $bar"
     //% percent.min=0 percent.max=100
     //% page.min=0 page.max=7
     //% col.min=0 col.max=50
     //% wide.min=10 wide.max=128
+    //% bar.shadow="toggleOnOff"
     //% weight=3
-    export function progressBar(percent: number, page = 0, col = 0, wide = 50){
+    export function progressBar(percent: number, page = 0, col = 0, wide = 100, bar: boolean){
     let i: number, scale_value: number;
     setPageAddress(page,page);
     setColumnAddress(col, displayWidth - 1);
     scale_value = percent % wide;
 sendData(PRG_LEFT_EDGE);
 for (i = 0; i < scale_value; i++ ) {
-sendData(PRG_NOT_ACTIVE);
+if (bar) sendData(PRG_ACTIVE);
+else sendData(PRG_NOT_ACTIVE)
     }
 sendData(PRG_ACTIVE);    
  for (i = scale_value; i < wide; i++ ) {
@@ -274,6 +280,53 @@ sendData(PRG_NOT_ACTIVE);
     }  
     sendData(PRG_RIGHT_EDGE);     
     }
+
+    //% block="progressBarV: value $percent page $page col $col|| Height $high"
+    //% percent.min=0 percent.max=64
+    //% page.min=0 page.max=7
+    //% col.min=0 col.max=120
+    //% high.min=10 high.max=128
+    //% bar.shadow="toggleOnOff"
+    //% weight=3
+ export function progressBarV(percent: number, page = 0, col = 0, high = 40){
+     let i: number, scale_value: number, h: number;
+    let blocksV = Math.floor(high/8)
+    scale_value = percent % (high);
+    let blockVCount = 0;
+    let barV = scale_value%8;    
+    setPageAddress(page,page+blocksV);
+    setColumnAddress(col, col + 8);
+
+  sendData(PRG_LEFT_EDGE);
+for (i = 0; i < 7; i++ ) {
+if (percent== blockVCount + barV){
+    sendData(0x01 | (1<<barV))
+    }
+else {sendData(0x01)};
+   }
+    sendData(PRG_RIGHT_EDGE);
+blockVCount+=8
+ for (h = 0; h < blocksV-2; h++ ) {  
+
+   sendData(PRG_LEFT_EDGE);
+for (i = 0; i < 7; i++ ) {
+if (percent== blockVCount + barV){
+    sendData(0x00 | (1<<barV))
+    }
+else sendData(0x00);
+    }
+    sendData(PRG_RIGHT_EDGE);
+    blockVCount+=8
+     } 
+
+sendData(PRG_LEFT_EDGE);    
+ for (i = 0; i < 7; i++ ) {
+//sendData(0x80);
+if (percent== blockVCount + barV) sendData(0x80 | (1<<barV));
+else sendData(0x80); 
+    }  
+    sendData(PRG_RIGHT_EDGE);  
+ }
 
     //% block="draw rectangle from:|x: $x0 y: $y0 to| x: $x1 y: $y1"
     //% x0.defl=0
@@ -329,7 +382,7 @@ sendData(PRG_NOT_ACTIVE);
         loadPercent = 0
         clear()
     }
-            font = hex`
+       font = hex`
     0000000000
     00005F0000
     0007000700
@@ -482,10 +535,13 @@ bitmap(bigfont,2,5,10,22);
             pins.i2cWriteBuffer(chipAdress, line, false)
         }
     }
-    //% block="writeBigNumber at $page$col number$bigNum °c$temp "
+    
+    //% block="writeBigNumber at $page$col number$bigNum|| °c$temp "
     //% page.min=0 page.max=7
     //% col.min=0 col.max=100
-    //% weight=9
+    //% temp.shadow="toggleOnOff"
+    //% inlineInputMode=inline
+    //% weight=5
     export function writeBigNumber(page: number, col: number,  bigNum: number, temp = false){
         let str = Math.round(bigNum).toString();   
         for (let i = 0; i < str.length; i++) {
@@ -496,10 +552,11 @@ bitmap(bigfont,2,5,10,22);
     }
 /**/ 
 //first char =43 +, page =  3, col = 13
+//% block="bigfont"
     bigfont = hex`
 7CBA8282BA7C00000000000000     
-0000000000F0E8181818080000      
-00000000000F17181818100000      																											
+0000000000E0D0303030100000      
+00000000003F5F606060400000      																											     																											
 																											   																										
 00000000000000000000000000
 000010383838ffff3838381000
@@ -566,4 +623,3 @@ bitmap(bigfont,2,5,10,22);
 0000000000040e0e0400000000
 `
 }
-
