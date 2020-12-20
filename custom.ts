@@ -8,6 +8,7 @@ namespace OLED {
     export let bigfont: Buffer;
     export let font: Buffer;
     export let bitmapImage: Buffer;
+    export let bitmapImage2: Buffer;
 
     const SSD1306_SETCONTRAST = 0x81
     const SSD1306_SETCOLUMNADRESS = 0x21
@@ -282,10 +283,10 @@ sendData(PRG_NOT_ACTIVE);
     }
 
     //% block="progressBarV: value $percent page $page col $col|| Height $high"
-    //% percent.min=0 percent.max=64
+    //% percent.min=0 percent.max=56
     //% page.min=0 page.max=7
-    //% col.min=0 col.max=120
-    //% high.min=10 high.max=128
+    //% col.min=0 col.max=118
+    //% high.min=16 high.max=56
     //% bar.shadow="toggleOnOff"
     //% weight=3
  export function progressBarV(percent: number, page = 0, col = 0, high = 40){
@@ -623,3 +624,4 @@ bitmap(bigfont,2,5,10,22);
 0000000000040e0e0400000000
 `
 }
+
