@@ -16,11 +16,11 @@
         "test.ts"
     ],
     "targetVersions": {
-        "target": "3.1.41",
+        "target": "3.1.44",
         "targetId": "microbit"
     },
     "supportedTargets": [
         "microbit"
     ],
-    "preferredEditor": "tsprj"
+    "preferredEditor": "blocksprj"
 }

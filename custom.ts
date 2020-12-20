@@ -1,13 +1,9 @@
-declare interface Math {
-    floor(x: number): number;
-}
-
-
 //% color=#27b0ba icon="\uf26c"
 namespace OLED {
     export let bigfont: Buffer;
     export let font: Buffer;
     export let bitmapImage: Buffer;
+    export let bitmapImage2: Buffer;
 
     const SSD1306_SETCONTRAST = 0x81
     const SSD1306_SETCOLUMNADRESS = 0x21
@@ -85,7 +81,11 @@ namespace OLED {
         charX = xOffset
         charY = yOffset
     }
-        //% block="show OLED bitmap"
+        //% block="show OLED bitmap: $bitmap||page $start_page to $end_page column $start_col to $end_col"
+         //% start_page.min=0 start_page.max=7
+        //% end_page.min=0 end_page.max=7 end_page.defl=7
+    //% start_col.min=0 start_col.max=120  
+    //% end_col.min=0 end_col.max=120  end_col.defl=127
     //% weight=3
     export function bitmap(bitmap: Buffer, 
             start_page = 0, end_page = 7,
@@ -160,113 +160,28 @@ let data = pins.createBuffer(2);
         }
 
     }
-    function drawShape(pixels: Array<Array<number>>) {
-        let x1 = displayWidth
-        let y1 = displayHeight * 8
-        let x2 = 0
-        let y2 = 0
-        for (let i = 0; i < pixels.length; i++) {
-            if (pixels[i][0] < x1) {
-                x1 = pixels[i][0]
-            }
-            if (pixels[i][0] > x2) {
-                x2 = pixels[i][0]
-            }
-            if (pixels[i][1] < y1) {
-                y1 = pixels[i][1]
-            }
-            if (pixels[i][1] > y2) {
-                y2 = pixels[i][1]
-            }
-        }
-        let page1 = Math.floor(y1 / 8)
-        let page2 = Math.floor(y2 / 8)
-        let line = pins.createBuffer(2)
-        line[0] = 0x40
-        for (let x = x1; x <= x2; x++) {
-            for (let page = page1; page <= page2; page++) {
-                line[1] = 0x00
-                for (let i = 0; i < pixels.length; i++) {
-                    if (pixels[i][0] === x) {
-                        if (Math.floor(pixels[i][1] / 8) === page) {
-                            line[1] |= Math.pow(2, (pixels[i][1] % 8))
-                        }
-                    }
-                }
-                if (line[1] !== 0x00) {
-                    command(SSD1306_SETCOLUMNADRESS)
-                    command(x)
-                    command(x + 1)
-                    command(SSD1306_SETPAGEADRESS)
-                    command(page)
-                    command(page + 1)
-                    //line[1] |= pins.i2cReadBuffer(chipAdress, 2)[1]
-                    pins.i2cWriteBuffer(chipAdress, line, false)
-                }
-            }
-        }
-    }
-
-    //% block="draw line from:|x: $x0 y: $y0 to| x: $x1 y: $y1"
-    //% x0.defl=0
-    //% y0.defl=0
-    //% x1.defl=20
-    //% y1.defl=20
-    //% weight=1
-    export function drawLine(x0: number, y0: number, x1: number, y1: number) {
-        let pixels: Array<Array<number>> = []
-        let kx: number, ky: number, c: number, i: number, xx: number, yy: number, dx: number, dy: number;
-        let targetX = x1
-        let targetY = y1
-        x1 -= x0; kx = 0; if (x1 > 0) kx = +1; if (x1 < 0) { kx = -1; x1 = -x1; } x1++;
-        y1 -= y0; ky = 0; if (y1 > 0) ky = +1; if (y1 < 0) { ky = -1; y1 = -y1; } y1++;
-        if (x1 >= y1) {
-            c = x1
-            for (i = 0; i < x1; i++ , x0 += kx) {
-                pixels.push([x0, y0])
-                c -= y1; if (c <= 0) { if (i != x1 - 1) pixels.push([x0 + kx, y0]); c += x1; y0 += ky; if (i != x1 - 1) pixels.push([x0, y0]); }
-                if (pixels.length > 20) {
-                    drawShape(pixels)
-                    pixels = []
-                    drawLine(x0, y0, targetX, targetY)
-                    return
-                }
-            }
-        } else {
-            c = y1
-            for (i = 0; i < y1; i++ , y0 += ky) {
-                pixels.push([x0, y0])
-                c -= x1; if (c <= 0) { if (i != y1 - 1) pixels.push([x0, y0 + ky]); c += y1; x0 += kx; if (i != y1 - 1) pixels.push([x0, y0]); }
-                if (pixels.length > 20) {
-                    drawShape(pixels)
-                    pixels = []
-                    drawLine(x0, y0, targetX, targetY)
-                    return
-                }
-            }
-        }
-        drawShape(pixels)
-    }
 
      const PRG_MAX_SCALE  =   100
     const PRG_LEFT_EDGE  = 0xFF
     const PRG_RIGHT_EDGE = 0xFF
     const PRG_ACTIVE    =  0xBD
     const PRG_NOT_ACTIVE = 0x81
-    //% block="progressBar $percent percent at $page,$col Width $wide"
+    //% block="progressBar: value $percent page $page col $col|| Width $wide bar $bar"
     //% percent.min=0 percent.max=100
     //% page.min=0 page.max=7
     //% col.min=0 col.max=50
     //% wide.min=10 wide.max=128
+    //% bar.shadow="toggleOnOff"
     //% weight=3
-    export function progressBar(percent: number, page = 0, col = 0, wide = 50){
+    export function progressBar(percent: number, page = 0, col = 0, wide = 100, bar: boolean){
     let i: number, scale_value: number;
     setPageAddress(page,page);
     setColumnAddress(col, displayWidth - 1);
     scale_value = percent % wide;
 sendData(PRG_LEFT_EDGE);
 for (i = 0; i < scale_value; i++ ) {
-sendData(PRG_NOT_ACTIVE);
+if (bar) sendData(PRG_ACTIVE);
+else sendData(PRG_NOT_ACTIVE)
     }
 sendData(PRG_ACTIVE);    
  for (i = scale_value; i < wide; i++ ) {
@@ -275,18 +190,53 @@ sendData(PRG_NOT_ACTIVE);
     sendData(PRG_RIGHT_EDGE);     
     }
 
-    //% block="draw rectangle from:|x: $x0 y: $y0 to| x: $x1 y: $y1"
-    //% x0.defl=0
-    //% y0.defl=0
-    //% x1.defl=20
-    //% y1.defl=20
-    //% weight=0
-    export function drawRectangle(x0: number, y0: number, x1: number, y1: number) {
-        drawLine(x0, y0, x1, y0)
-        drawLine(x0, y1, x1, y1)
-        drawLine(x0, y0, x0, y1)
-        drawLine(x1, y0, x1, y1)
+    //% block="progressBarV: value $percent page $page col $col|| Height $high"
+    //% percent.min=0 percent.max=56
+    //% page.min=0 page.max=7
+    //% col.min=0 col.max=118
+    //% high.min=16 high.max=56
+    //% bar.shadow="toggleOnOff"
+    //% weight=3
+ export function progressBarV(percent: number, page = 0, col = 0, high = 40){
+     let i: number, scale_value: number, h: number;
+    let blocksV = Math.floor(high/8)
+    scale_value = percent % (high);
+    let blockVCount = 0;
+    let barV = scale_value%8;    
+    setPageAddress(page,page+blocksV);
+    setColumnAddress(col, col + 8);
+
+  sendData(PRG_LEFT_EDGE);
+for (i = 0; i < 7; i++ ) {
+if (percent== blockVCount + barV){
+    sendData(0x01 | (1<<barV))
     }
+else {sendData(0x01)};
+   }
+    sendData(PRG_RIGHT_EDGE);
+blockVCount+=8
+ for (h = 0; h < blocksV-2; h++ ) {  
+
+   sendData(PRG_LEFT_EDGE);
+for (i = 0; i < 7; i++ ) {
+if (percent== blockVCount + barV){
+    sendData(0x00 | (1<<barV))
+    }
+else sendData(0x00);
+    }
+    sendData(PRG_RIGHT_EDGE);
+    blockVCount+=8
+     } 
+
+sendData(PRG_LEFT_EDGE);    
+ for (i = 0; i < 7; i++ ) {
+//sendData(0x80);
+if (percent== blockVCount + barV) sendData(0x80 | (1<<barV));
+else sendData(0x80); 
+    }  
+    sendData(PRG_RIGHT_EDGE);  
+ }
+
     //% block="initialize OLED with width $width height $height"
     //% width.defl=128
     //% height.defl=64
@@ -329,7 +279,7 @@ sendData(PRG_NOT_ACTIVE);
         loadPercent = 0
         clear()
     }
-            font = hex`
+       font = hex`
     0000000000
     00005F0000
     0007000700
@@ -464,26 +414,47 @@ bitmap(bigfont,2,5,10,22);
 
 }
 
-/*
-    function drawChar(x: number, y: number, c: string) {
-        setPageAddress(y, y +1);
-        setColumnAddress(x, x +5);
+
+    export function bigChar(page: number, col: number,  c: string) {
+        setPageAddress(page, page +3);
+        setColumnAddress(col, col +12);
         let line = pins.createBuffer(2)
         line[0] = 0x40
-        for (let i = 0; i < 6; i++) {
-            if (i === 5) {
+        for (let i = 0; i < 40; i++) {
+            if (i === 39) {
                 line[1] = 0x00
             } else {
-                let charIndex = c.charCodeAt(0)-32
-                let charNumber = font.getNumber(NumberFormat.UInt8BE, 5 * charIndex + i)
+                let charIndex = c.charCodeAt(0)-42
+                let charNumber = bigfont.getNumber(NumberFormat.UInt8BE, 39 * charIndex + i)
                 line[1] = charNumber
 
             }
             pins.i2cWriteBuffer(chipAdress, line, false)
         }
-*/ 
+    }
+    
+    //% block="writeBigNumber at $page$col number$bigNum|| °c$temp "
+    //% page.min=0 page.max=7
+    //% col.min=0 col.max=100
+    //% temp.shadow="toggleOnOff"
+    //% inlineInputMode=inline
+    //% weight=5
+    export function writeBigNumber(page: number, col: number,  bigNum: number, temp = false){
+        let str = Math.round(bigNum).toString();   
+        for (let i = 0; i < str.length; i++) {
+            bigChar(page,col,str[i])
+            col+=18
+    }
+    if (temp) bigChar(page,col,"*") 
+    }
+/**/ 
 //first char =43 +, page =  3, col = 13
+//% block="bigfont"
     bigfont = hex`
+7CBA8282BA7C00000000000000     
+0000000000E0D0303030100000      
+00000000003F5F606060400000      																											     																											
+																											   																										
 00000000000000000000000000
 000010383838ffff3838381000
 00000000000003030000000000 
