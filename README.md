@@ -1,22 +1,23 @@
 quiet fork from https://github.com/tinkertanker/pxt-oled-ssd1306  
 This fork adds bitmap support.   
-It also provides large LCD style number font. Simple horizontal and vertical progress bar/level meter.
-https://www.hobbytronics.co.uk/bmp-lcd-converter Remove 0x and commas throughout the generated data.
+It also provides large LCD style number font, simple horizontal and vertical progress bar/level meter.
 
-clear()  
+init(width: number, height: number)  
 bitmap(bitmap: Buffer, start_page = 0, end_page = 7, start_col = 0, end_col = 127)  
+clear()  
 cursorTo(page: number, col: number)  
+newLine()  
 writeString(str: string)  
 writeNum(n: number)  
 writeStringNewLine(str: string)  
 writeNumNewLine(n: number)  
-newLine()  
+writeBigNumber(page: number, col: number,  bigNum: number, oC = false)  
 progressBar(percent: number, page = 0, col = 0, wide = 100, bar: boolean)  
 progressBarV(percent: number, page = 0, col = 0, high = 40)  
-init(width: number, height: number)  
-bigChar(page: number, col: number,  c: string)  
-writeBigNumber(page: number, col: number,  bigNum: number, temp = false)  
-
+ 
+I have used the program BMP-LCD to create the bitmap files. It is available at https://www.hobbytronics.co.uk/bmp-lcd-converter  
+I have stored the generated data as hex Buffers. You need to move to javascript mode in the makeCode editor and I have stored them in the test.ts although they could be stored in main.ts or custom.ts files. Remove 0x and commas throughout the generated data. The program only handles 168 x 64 pixel images so I am looking for an app that will handle smaller clips. 
+I a making this code public although I still hope to make further tweaks to code and documentation. 
 > Open this page at [https://pdbperks.github.io/oledbitmap/](https://pdbperks.github.io/oledbitmap/)
 
 ## Use as Extension
