@@ -1,7 +1,21 @@
 quiet fork from https://github.com/tinkertanker/pxt-oled-ssd1306  
-Adding bitmap support. https://www.hobbytronics.co.uk/bmp-lcd-converter Remove 0x and commas throughout the generated data.  
-Large LCD style number font. Simple horizontal and vertical progress bar/level meter.
+This fork adds bitmap support.   
+It also provides large LCD style number font. Simple horizontal and vertical progress bar/level meter.
+https://www.hobbytronics.co.uk/bmp-lcd-converter Remove 0x and commas throughout the generated data.
 
+clear()  
+bitmap(bitmap: Buffer, start_page = 0, end_page = 7, start_col = 0, end_col = 127)  
+cursorTo(page: number, col: number)  
+writeString(str: string)  
+writeNum(n: number)  
+writeStringNewLine(str: string)  
+writeNumNewLine(n: number)  
+newLine()  
+progressBar(percent: number, page = 0, col = 0, wide = 100, bar: boolean)  
+progressBarV(percent: number, page = 0, col = 0, high = 40)  
+init(width: number, height: number)  
+bigChar(page: number, col: number,  c: string)  
+writeBigNumber(page: number, col: number,  bigNum: number, temp = false)  
 
 > Open this page at [https://pdbperks.github.io/oledbitmap/](https://pdbperks.github.io/oledbitmap/)
 
@@ -14,22 +28,5 @@ This repository can be added as an **extension** in MakeCode.
 * click on **Extensions** under the gearwheel menu
 * search for **https://github.com/pdbperks/oledbitmap** and import
 
-## Edit this project ![Build status badge](https://github.com/pdbperks/oledbitmap/workflows/MakeCode/badge.svg)
 
-To edit this repository in MakeCode.
 
-* open [https://makecode.microbit.org/](https://makecode.microbit.org/)
-* click on **Import** then click on **Import URL**
-* paste **https://github.com/pdbperks/oledbitmap** and click import
-
-## Blocks preview
-
-This image shows the blocks code from the last commit in master.
-This image may take a few minutes to refresh.
-
-![A rendered view of the blocks](https://github.com/pdbperks/oledbitmap/raw/master/.github/makecode/blocks.png)
-
-#### Metadata (used for search, rendering)
-
-* for PXT/microbit
-<script src="https://makecode.com/gh-pages-embed.js"></script><script>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script>
