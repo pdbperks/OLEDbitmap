@@ -15,6 +15,13 @@ input.onButtonPressed(Button.AB, function () {
     basic.clearScreen()
     OLED.clear()
     OLED.writeStringNewLine("OLED demonstration")
+    OLED.bitmap(
+    OLED.bitmapHead55x56,
+    1,
+    7,
+    60,
+    114
+    )
     while (!(input.buttonIsPressed(Button.A))) {
         OLED.writeBigNumber(3, 0, input.temperature(), true)
         OLED.progressBar(
@@ -43,8 +50,11 @@ input.onButtonPressed(Button.B, function () {
     0,
     127
     )
+    OLED.cursorTo(7, 70)
+    OLED.writeStringNewLine("@pdbperks")
 })
 OLED.init(128, 64)
+OLED.setDisplayFlip(true, true)
 // bitmapHolder = "OLED.bigfont"
 OLED.writeStringNewLine("OLED demonstration")
 OLED.writeStringNewLine("Press a button")
