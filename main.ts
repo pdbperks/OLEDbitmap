@@ -1,7 +1,4 @@
 input.onButtonPressed(Button.A, function () {
-    // basic.rotateTo(DAL.MICROBIT_DISPLAY_ROTATION_90)
-    // DAL.MICROBIT_DISPLAY_ROTATION_180
-    basic.showNumber(5)
     OLED.clear()
     OLED.bitmap(
     OLED.bitmapImage,
@@ -15,6 +12,8 @@ input.onButtonPressed(Button.AB, function () {
     basic.clearScreen()
     OLED.clear()
     OLED.writeStringNewLine("OLED demonstration")
+    OLED.cursorTo(1, 6)
+    OLED.writeStringNewLine("@pdbperks")
     OLED.bitmap(
     OLED.bitmapHead55x56,
     1,
@@ -50,8 +49,6 @@ input.onButtonPressed(Button.B, function () {
     0,
     127
     )
-    OLED.cursorTo(7, 70)
-    OLED.writeStringNewLine("@pdbperks")
 })
 OLED.init(128, 64)
 OLED.setDisplayFlip(true, true)
