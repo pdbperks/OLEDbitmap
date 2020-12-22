@@ -1,8 +1,11 @@
 quiet fork from https://github.com/tinkertanker/pxt-oled-ssd1306  
 This fork adds bitmap support.   
-It also provides large LCD style number font, simple horizontal and vertical progress bar/level meter.
+It also provides large LCD style number font, simple horizontal and vertical progress bar/level meter. 
+Line drawing commands are not included.
 
+####Exported Commands
 init(width: number, height: number)  
+flipScreen(left = false, down = false)
 bitmap(bitmap: Buffer, start_page = 0, end_page = 7, start_col = 0, end_col = 127)  
 clear()  
 cursorTo(page: number, col: number)  
