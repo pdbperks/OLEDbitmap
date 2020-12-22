@@ -3,9 +3,9 @@ This fork adds bitmap support.
 It also provides large LCD style number font, simple horizontal and vertical progress bar/level meter. 
 Line drawing commands are not included.
 
-####Exported Commands
+### Exported Commands  
 init(width: number, height: number)  
-flipScreen(left = false, down = false)
+flipScreen(left = false, down = false)  
 bitmap(bitmap: Buffer, start_page = 0, end_page = 7, start_col = 0, end_col = 127)  
 clear()  
 cursorTo(page: number, col: number)  
@@ -22,7 +22,7 @@ I have used the program BMP-LCD to create the bitmap files. It is available at h
 I have stored the generated data as hex Buffers. You need to move to javascript mode in the makeCode editor and I have stored them in the test.ts although they could be stored in main.ts or custom.ts files. Remove 0x and commas throughout the generated data. The program only handles 168 x 64 pixel images but an alternative program LCD_assistant http://en.radzio.dxp.pl/bitmap_converter/  will allow a range of image sizes.
 I am making this code public although I still hope to make further tweaks to code and documentation. 
 
-## Use as Extension
+### Use as Extension
 
 This repository can be added as an **extension** in MakeCode.
 
