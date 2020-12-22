@@ -1,14 +1,10 @@
-declare interface Math {
-    floor(x: number): number;
-}
-
-
 //% color=#27b0ba icon="\uf26c"
 namespace OLED {
     export let bigfont: Buffer;
     export let font: Buffer;
     export let bitmapImage: Buffer;
     export let bitmapImage2: Buffer;
+    export let bitmapHead55x56: Buffer
 
     const SSD1306_SETCONTRAST = 0x81
     const SSD1306_SETCOLUMNADRESS = 0x21
@@ -32,6 +28,7 @@ namespace OLED {
     const SSD1306_COMSCANINC = 0xC0
     const SSD1306_COMSCANDEC = 0xC8
     const SSD1306_SEGREMAP = 0xA0
+    const SSD1306_SEGREMAP_127 = 0xA1
     const SSD1306_CHARGEPUMP = 0x8D
     const chipAdress = 0x3C
     const xOffset = 0
@@ -86,12 +83,23 @@ namespace OLED {
         charX = xOffset
         charY = yOffset
     }
+        
+    //% block="cursorTo page $page col $col"
+    //% page.min=0 page.max=7
+    //% col.min=0 col.max=120
+    //% inlineInputMode=inline
+    //% weight=12
+    export function cursorTo(page: number, col: number) {
+        charX = col
+        charY = page
+        }
+    
         //% block="show OLED bitmap: $bitmap||page $start_page to $end_page column $start_col to $end_col"
          //% start_page.min=0 start_page.max=7
         //% end_page.min=0 end_page.max=7 end_page.defl=7
     //% start_col.min=0 start_col.max=120  
     //% end_col.min=0 end_col.max=120  end_col.defl=127
-    //% weight=3
+    //% weight=15
     export function bitmap(bitmap: Buffer, 
             start_page = 0, end_page = 7,
             start_col = 0, end_col = 127){
@@ -165,95 +173,9 @@ let data = pins.createBuffer(2);
         }
 
     }
-    function drawShape(pixels: Array<Array<number>>) {
-        let x1 = displayWidth
-        let y1 = displayHeight * 8
-        let x2 = 0
-        let y2 = 0
-        for (let i = 0; i < pixels.length; i++) {
-            if (pixels[i][0] < x1) {
-                x1 = pixels[i][0]
-            }
-            if (pixels[i][0] > x2) {
-                x2 = pixels[i][0]
-            }
-            if (pixels[i][1] < y1) {
-                y1 = pixels[i][1]
-            }
-            if (pixels[i][1] > y2) {
-                y2 = pixels[i][1]
-            }
-        }
-        let page1 = Math.floor(y1 / 8)
-        let page2 = Math.floor(y2 / 8)
-        let line = pins.createBuffer(2)
-        line[0] = 0x40
-        for (let x = x1; x <= x2; x++) {
-            for (let page = page1; page <= page2; page++) {
-                line[1] = 0x00
-                for (let i = 0; i < pixels.length; i++) {
-                    if (pixels[i][0] === x) {
-                        if (Math.floor(pixels[i][1] / 8) === page) {
-                            line[1] |= Math.pow(2, (pixels[i][1] % 8))
-                        }
-                    }
-                }
-                if (line[1] !== 0x00) {
-                    command(SSD1306_SETCOLUMNADRESS)
-                    command(x)
-                    command(x + 1)
-                    command(SSD1306_SETPAGEADRESS)
-                    command(page)
-                    command(page + 1)
-                    //line[1] |= pins.i2cReadBuffer(chipAdress, 2)[1]
-                    pins.i2cWriteBuffer(chipAdress, line, false)
-                }
-            }
-        }
-    }
+ 
 
-    //% block="draw line from:|x: $x0 y: $y0 to| x: $x1 y: $y1"
-    //% x0.defl=0
-    //% y0.defl=0
-    //% x1.defl=20
-    //% y1.defl=20
-    //% weight=1
-    export function drawLine(x0: number, y0: number, x1: number, y1: number) {
-        let pixels: Array<Array<number>> = []
-        let kx: number, ky: number, c: number, i: number, xx: number, yy: number, dx: number, dy: number;
-        let targetX = x1
-        let targetY = y1
-        x1 -= x0; kx = 0; if (x1 > 0) kx = +1; if (x1 < 0) { kx = -1; x1 = -x1; } x1++;
-        y1 -= y0; ky = 0; if (y1 > 0) ky = +1; if (y1 < 0) { ky = -1; y1 = -y1; } y1++;
-        if (x1 >= y1) {
-            c = x1
-            for (i = 0; i < x1; i++ , x0 += kx) {
-                pixels.push([x0, y0])
-                c -= y1; if (c <= 0) { if (i != x1 - 1) pixels.push([x0 + kx, y0]); c += x1; y0 += ky; if (i != x1 - 1) pixels.push([x0, y0]); }
-                if (pixels.length > 20) {
-                    drawShape(pixels)
-                    pixels = []
-                    drawLine(x0, y0, targetX, targetY)
-                    return
-                }
-            }
-        } else {
-            c = y1
-            for (i = 0; i < y1; i++ , y0 += ky) {
-                pixels.push([x0, y0])
-                c -= x1; if (c <= 0) { if (i != y1 - 1) pixels.push([x0, y0 + ky]); c += y1; x0 += kx; if (i != y1 - 1) pixels.push([x0, y0]); }
-                if (pixels.length > 20) {
-                    drawShape(pixels)
-                    pixels = []
-                    drawLine(x0, y0, targetX, targetY)
-                    return
-                }
-            }
-        }
-        drawShape(pixels)
-    }
-
-     const PRG_MAX_SCALE  =   100
+    const PRG_MAX_SCALE  =   100
     const PRG_LEFT_EDGE  = 0xFF
     const PRG_RIGHT_EDGE = 0xFF
     const PRG_ACTIVE    =  0xBD
@@ -288,7 +210,7 @@ sendData(PRG_NOT_ACTIVE);
     //% col.min=0 col.max=118
     //% high.min=16 high.max=56
     //% bar.shadow="toggleOnOff"
-    //% weight=3
+    //% weight=2
  export function progressBarV(percent: number, page = 0, col = 0, high = 40){
      let i: number, scale_value: number, h: number;
     let blocksV = Math.floor(high/8)
@@ -329,22 +251,11 @@ else sendData(0x80);
     sendData(PRG_RIGHT_EDGE);  
  }
 
-    //% block="draw rectangle from:|x: $x0 y: $y0 to| x: $x1 y: $y1"
-    //% x0.defl=0
-    //% y0.defl=0
-    //% x1.defl=20
-    //% y1.defl=20
-    //% weight=0
-    export function drawRectangle(x0: number, y0: number, x1: number, y1: number) {
-        drawLine(x0, y0, x1, y0)
-        drawLine(x0, y1, x1, y1)
-        drawLine(x0, y0, x0, y1)
-        drawLine(x1, y0, x1, y1)
-    }
+
     //% block="initialize OLED with width $width height $height"
     //% width.defl=128
     //% height.defl=64
-    //% weight=9
+    //% weight=20
     export function init(width: number, height: number) {
         command(SSD1306_DISPLAYOFF);
         command(SSD1306_SETDISPLAYCLOCKDIV);
@@ -368,8 +279,6 @@ else sendData(0x80);
         command(0xF1);
         command(SSD1306_SETVCOMDETECT);
         command(0x40);
-        command(0xc0);                                  //flip the display
-        command(0xa0);                                  //flip the display
         command(SSD1306_DISPLAYALLON_RESUME);
         command(SSD1306_NORMALDISPLAY);
         command(SSD1306_DISPLAYON);
@@ -383,6 +292,19 @@ else sendData(0x80);
         loadPercent = 0
         clear()
     }
+    
+    //% block="setDisplayFlip page $page col $col"
+    //% page.shadow="toggleOnOff"
+    //% col.shadow="toggleOnOff"
+    //% weight=19
+    export function setDisplayFlip(page = false, col = false){
+    if (page) command(SSD1306_COMSCANINC)                            
+    else command(SSD1306_COMSCANDEC)
+    if (col) command(SSD1306_SEGREMAP)                                
+    else command(SSD1306_SEGREMAP_127)
+   
+    }    
+  
        font = hex`
     0000000000
     00005F0000
@@ -624,4 +546,3 @@ bitmap(bigfont,2,5,10,22);
 0000000000040e0e0400000000
 `
 }
-
