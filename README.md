@@ -3,6 +3,8 @@ This fork adds bitmap support.
 It also provides large LCD style number font, simple horizontal and vertical progress bar/level meter.  
 Line drawing commands are not included.
 
+![OLED demonstration](OLEDscreen.png)
+
 ### Exported Commands  
 init(width: number, height: number)  
 flipScreen(left = false, down = false)  
