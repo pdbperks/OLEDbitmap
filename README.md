@@ -20,7 +20,6 @@ progressBarV(percent: number, page = 0, col = 0, high = 40)
  
 I have used the program BMP-LCD to create the bitmap files. It is available at https://www.hobbytronics.co.uk/bmp-lcd-converter  
 I have stored the generated data as hex Buffers. You need to move to javascript mode in the makeCode editor and I have stored them in the test.ts although they could be stored in main.ts or custom.ts files. Remove 0x and commas throughout the generated data. The program only handles 168 x 64 pixel images but an alternative program LCD_assistant http://en.radzio.dxp.pl/bitmap_converter/  will allow a range of image sizes.
-I am making this code public although I still hope to make further tweaks to code and documentation. 
 
 ### Use as Extension
 
